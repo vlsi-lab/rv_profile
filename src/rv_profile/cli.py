@@ -41,6 +41,9 @@ def main():
     config_file, _ = os.path.splitext(CFG)
     OUTPUT, _ = os.path.splitext(OUTPUT) # Get rid of the extension
 
+    # Get relative path to config file
+    config_file = os.path.relpath(config_file)
+
     # Create a temporary file to store the flamegraph data
     tmp = tempfile.NamedTemporaryFile(delete=False)
 
