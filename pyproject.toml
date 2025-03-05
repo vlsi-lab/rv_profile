@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rv_profile"
-version = "0.2.1"
+version = "0.2.2"
 description = "A tool for generating flamegraphs of RISC-V programs running on RTL simulations"
 readme = "README.md"
 authors = [{ name = "Vincenzo Petrolo", email = "vincenzo.petrolo99@gmail.com" }]
