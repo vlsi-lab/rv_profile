@@ -4,8 +4,15 @@ import os
 import subprocess
 from rv_profile.CallStack import CallStack
 
-RET=(0x8082, )
+RET=(0x8082, 0x8067)
 MRET=(0x30200073,)
+CALL=(0b1100111, 0b1101111)
+BR=(0b1100011,)
+
+
+BR_BUFF_LENGTH = 3
+CALL_BUFF_LENGTH = 1
+RET_BUFF_LENGTH = 1
 
 
 def ranges(binary_file):
@@ -47,6 +54,8 @@ def riscv_profile_main(elf, fst, cfg, output, step):
     cs      = CallStack(verbose=False)
     functions = ranges(BIN)
     buffer  = []
+    state = None # Can be BR, CALL, RET
+    last = None
 
     wal     = Wal()
     wal.load(VCD)
@@ -55,30 +64,199 @@ def riscv_profile_main(elf, fst, cfg, output, step):
     wal.eval_str(f'(eval-file {CFG_FILE})') # require config script to get concrete signal names
 
     def count_function(seval, args):
+        nonlocal buffer
+        nonlocal state
+        nonlocal last
+
         addr = seval.eval(args[0])
         instr = seval.eval(args[1])
         mcycle = seval.eval(args[2])
 
-        assert (len(buffer) == 0 or len(buffer) == 1)
+        if (last is not None and last[1] == instr and last[0] == addr):
+            return
 
-        if (len(buffer) == 1):
-            buffer.pop()
-
-            # Return with the new func name
-            for function in functions:
-                if addr >= function[1] and addr <= function[2]:
-                    cs.ret(function[0], addr, mcycle)
-        
-        if (instr in RET or instr in MRET):
-            if (len(buffer) == 0):
-                # buffer and wait for the next instruction
-                buffer.append(addr)
-                return
-
+        found = False
         for function in functions:
             if addr >= function[1] and addr <= function[2]:
-                    cs.call(function[0], addr, mcycle)
-                    return
+                found = True
+
+        if (not found): 
+            print("Ignoring instr")
+            return
+
+        assert (len(buffer) < max(BR_BUFF_LENGTH, CALL_BUFF_LENGTH, RET_BUFF_LENGTH)+1)
+
+        last = (addr, instr, mcycle)
+
+
+        
+        if (state == "BR"):
+            """
+            If the state is BR, then push until the buffer has length
+            BR_BUFF_LENGTH, if at that point the pc has not changed then we can
+            assume that the branch was not taken and we can pop the buffer and
+            add those instructions to the call stack.
+
+            Else if, at some point the pc changes, then we can assume that the
+            branch was taken and we can pop the buffer and ignore those
+            instructions.
+            """
+            if (len(buffer) < BR_BUFF_LENGTH):
+                print("[BR] Appending to buffer")
+                buffer.append((addr, instr, mcycle))
+
+            if (len(buffer) == BR_BUFF_LENGTH):
+                print("[BR] Buffer full")
+                """
+                Check if addresses in the buffer are contiguous, if they are
+                then the branch was not taken and we can pop the buffer and add
+                the instructions to the call stack.
+                """
+                taken = False
+                for i in range(len(buffer)):
+                    if (buffer[i][0] < addr + 4 * i):
+                        taken = True
+                        break
+                
+                print(f"[BR] Branch taken: {taken}")
+                
+                if (not taken):
+                    """
+                    If the branch was not taken, then for each instruction, until
+                    we meet a branch instruction/ret/call instruction, we can add
+                    the instructions to the call stack.
+                    """
+                    for i in range(len(buffer)):
+                        addr, instr, mcycle = buffer[i]
+
+                        buffer.pop()
+
+                        # Check if it is a corner-case, stop looping
+                        if (instr in set(BR, CALL, RET, MRET)):
+                            print("[BR] Stopping at corner case")
+                            break
+                        else: # Add to call stack
+                            print(f"[BR] Adding to call stack: {hex(addr)}")
+                            for function in functions:
+                                if addr >= function[1] and addr <= function[2]:
+                                    cs.call(function[0], addr, mcycle)
+                                    break
+                else: # Ignore all instructions in the buffer except last
+                    # The last one overrides addr, instr, mcycle
+                    addr, instr, mcycle = buffer[-1]
+                    buffer = [] # Empty the buffer
+                    print(f"[BR] Ignoring instructions in buffer, except last: {hex(addr)}")
+                
+                state = None
+        elif (state == "CALL"):
+            """
+            If the state is CALL, then push until the buffer has length
+            CALL_BUFF_LENGTH, the PC will change at some point, which will be
+            corresponding to the delay slot of the call instruction.
+
+            When the buffer is full, we can pop the buffer ignoring all the
+            instructions with PC continous to the call instruction, and add the
+            rest to the call stack.
+            """
+            if (len(buffer) < CALL_BUFF_LENGTH+1):
+                buffer.append((addr, instr, mcycle))
+                print("[CALL] Appending to buffer, length: ", len(buffer))
+            
+            if (len(buffer) == CALL_BUFF_LENGTH+1):
+                print("[CALL] Buffer full")
+                # Execute a first call to the oldest instruction in the buffer
+                addr, instr, mcycle = buffer[0]
+                print(f"[CALL] Adding to call stack: {hex(addr)}")
+                for function in functions:
+                    if addr >= function[1] and addr <= function[2]:
+                        cs.call(function[0], addr, mcycle)
+                        break
+                
+                buffer = buffer[1:]
+
+                assert (len(buffer) == 1)
+                
+                addr, instr, mcycle = buffer[-1]
+                buffer = []
+                state = None
+        elif (state == "RET"):
+            """Use the same algorithm as for CALL instructions."""
+            if (len(buffer) < RET_BUFF_LENGTH+1):
+                print("[RET] Appending to buffer")
+                buffer.append((addr, instr, mcycle))
+            
+            if (len(buffer) == RET_BUFF_LENGTH+1):
+                print("[RET] Buffer full")
+
+                # Execute the RET
+                addr, instr, mcycle = buffer[0]
+
+
+                for function in functions:
+                    if addr >= function[1] and addr <= function[2]:
+                        cs.ret(function[0], addr, mcycle)
+                        break
+                        
+
+                buffer = buffer[1:]
+
+                assert (len(buffer) == 1)
+
+                # Execute this last instruction
+                addr, instr, mcycle = buffer[-1]
+                buffer = []
+                state = None
+
+        #Get the opcode from the instr
+        opcode = instr & 0x7F
+
+        if (state is not None):
+            return
+
+        if (instr in RET or instr in MRET):
+            """A return instruction is detected, keep accepting new instructions
+            until the buffer is full.
+            """
+            state = "RET"
+            buffer.append((addr, instr, mcycle))
+            print(f"[RET] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}")
+            return
+        elif (opcode in BR):
+            """A branch instruction is detected, keep accepting new instructions
+            until the buffer is full.
+            """
+            state = "BR"
+            print(f"[BR] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}")
+            return
+        elif (opcode in CALL):
+            """A call instruction is detected, keep accepting new instructions"
+            """
+            state = "CALL"
+            buffer.append((addr, instr, mcycle))
+            print(f"[CALL] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}")
+            return
+        else:
+            state = None
+
+        # if (len(buffer) == 1):
+        #     buffer.pop()
+
+        #     # Return with the new func name
+        #     for function in functions:
+        #         if addr >= function[1] and addr <= function[2]:
+        #             cs.ret(function[0], addr, mcycle)
+        
+        # if (instr in RET or instr in MRET):
+        #     if (len(buffer) == 0):
+        #         # buffer and wait for the next instruction
+        #         buffer.append(addr)
+        #         return
+
+            for function in functions:
+                if addr >= function[1] and addr <= function[2]:
+                        print(f"[NONE] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}")
+                        cs.call(function[0], addr, mcycle)
+                        return
 
     wal.step(step)
 
