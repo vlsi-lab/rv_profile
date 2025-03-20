@@ -10,7 +10,7 @@ CALL=(0b1100111, 0b1101111)
 BR=(0b1100011,)
 
 
-BR_BUFF_LENGTH = 3
+BR_BUFF_LENGTH = 2
 CALL_BUFF_LENGTH = 1
 RET_BUFF_LENGTH = 1
 
@@ -72,6 +72,8 @@ def riscv_profile_main(elf, fst, cfg, output, step):
         instr = seval.eval(args[1])
         mcycle = seval.eval(args[2])
 
+        print(f"[????] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}")
+
         if (last is not None and last[1] == instr and last[0] == addr):
             return
 
@@ -84,11 +86,9 @@ def riscv_profile_main(elf, fst, cfg, output, step):
             print("Ignoring instr")
             return
 
-        assert (len(buffer) < max(BR_BUFF_LENGTH, CALL_BUFF_LENGTH, RET_BUFF_LENGTH)+1)
+        assert (len(buffer) <= max(BR_BUFF_LENGTH, CALL_BUFF_LENGTH, RET_BUFF_LENGTH)+1)
 
         last = (addr, instr, mcycle)
-
-
         
         if (state == "BR"):
             """
@@ -101,11 +101,11 @@ def riscv_profile_main(elf, fst, cfg, output, step):
             branch was taken and we can pop the buffer and ignore those
             instructions.
             """
-            if (len(buffer) < BR_BUFF_LENGTH):
+            if (len(buffer) < BR_BUFF_LENGTH+1):
                 print("[BR] Appending to buffer")
                 buffer.append((addr, instr, mcycle))
 
-            if (len(buffer) == BR_BUFF_LENGTH):
+            if (len(buffer) == BR_BUFF_LENGTH+1):
                 print("[BR] Buffer full")
                 """
                 Check if addresses in the buffer are contiguous, if they are
@@ -113,42 +113,92 @@ def riscv_profile_main(elf, fst, cfg, output, step):
                 the instructions to the call stack.
                 """
                 taken = False
+                another_func = False
+                br_addr, _, _ = buffer[0]
+                for function in functions:
+                    if br_addr >= function[1] and br_addr <= function[2]:
+                        br_func = function[0]
+                        break
+
+                buffer = buffer[1:]
+
+                last_addr = br_addr
                 for i in range(len(buffer)):
-                    if (buffer[i][0] < addr + 4 * i):
+                    addr, instr, mcycle = buffer[i]
+                    # print(last_addr, addr)
+                    if (addr != last_addr+4 and addr != last_addr+2):
+                        # Check if another function is called instead
+                        for function in functions:
+                            if addr >= function[1] and addr <= function[2]:
+                                if (function[0] != br_func):
+                                    another_func = True
+                                break
+                        
+                        if (another_func):
+                            print("[BR] Another function called")
+                            break
+
                         taken = True
                         break
+                    last_addr = addr
+
                 
-                print(f"[BR] Branch taken: {taken}")
+                if (taken):
+                    print(f"[BR] Branch taken: {taken}")
                 
-                if (not taken):
-                    """
-                    If the branch was not taken, then for each instruction, until
-                    we meet a branch instruction/ret/call instruction, we can add
-                    the instructions to the call stack.
-                    """
+                if (another_func):
+                    print("[BR] Branch is not a real branch, entered another function")
+
+                    # Iterate the buffer until we meet a CALL/RET instruction
                     for i in range(len(buffer)):
                         addr, instr, mcycle = buffer[i]
+                        opcode = instr & 0x7F
 
-                        buffer.pop()
-
-                        # Check if it is a corner-case, stop looping
-                        if (instr in set(BR, CALL, RET, MRET)):
+                        print(f"[BR] Checking for corner case: {hex(addr)}, {hex(instr)}")
+                        if (instr in set(RET + MRET) or opcode in set(CALL)):
                             print("[BR] Stopping at corner case")
+                            buffer = buffer[i:]
                             break
-                        else: # Add to call stack
-                            print(f"[BR] Adding to call stack: {hex(addr)}")
-                            for function in functions:
-                                if addr >= function[1] and addr <= function[2]:
-                                    cs.call(function[0], addr, mcycle)
-                                    break
-                else: # Ignore all instructions in the buffer except last
-                    # The last one overrides addr, instr, mcycle
-                    addr, instr, mcycle = buffer[-1]
-                    buffer = [] # Empty the buffer
-                    print(f"[BR] Ignoring instructions in buffer, except last: {hex(addr)}")
+                    
+                    # Replay as a RET
+                    state = "RET"
+
+                    taken = None
+
                 
-                state = None
-        elif (state == "CALL"):
+                if (taken is not None):
+                    if (not taken):
+                        """
+                        If the branch was not taken, then for each instruction, until
+                        we meet a branch instruction/ret/call instruction, we can add
+                        the instructions to the call stack.
+                        """
+                        for i in range(len(buffer)-1):
+                            addr, instr, mcycle = buffer[i]
+
+                            # Check if it is a corner-case, stop looping
+                            if (instr in set(BR+ CALL+ RET+ MRET)):
+                                print("[BR] Stopping at corner case")
+                                buffer = buffer[i:]
+                                break
+                            else: # Add to call stack
+                                print(f"[BR] Adding to call stack: {hex(addr)}")
+                                for function in functions:
+                                    if addr >= function[1] and addr <= function[2]:
+                                        cs.call(function[0], addr, mcycle)
+                                        break
+
+                        addr, instr, mcycle = buffer[-1]
+                        buffer = []
+                        state = None
+                    else: # Ignore all instructions in the buffer except last
+                        # The last one overrides addr, instr, mcycle
+                        addr, instr, mcycle = buffer[-1]
+                        buffer = [] # Empty the buffer
+                        print(f"[BR] Ignoring instructions in buffer, except last: {hex(addr)}")
+                    
+                    state = None
+        if (state == "CALL"):
             """
             If the state is CALL, then push until the buffer has length
             CALL_BUFF_LENGTH, the PC will change at some point, which will be
@@ -179,7 +229,7 @@ def riscv_profile_main(elf, fst, cfg, output, step):
                 addr, instr, mcycle = buffer[-1]
                 buffer = []
                 state = None
-        elif (state == "RET"):
+        if (state == "RET"):
             """Use the same algorithm as for CALL instructions."""
             if (len(buffer) < RET_BUFF_LENGTH+1):
                 print("[RET] Appending to buffer")
@@ -189,23 +239,25 @@ def riscv_profile_main(elf, fst, cfg, output, step):
                 print("[RET] Buffer full")
 
                 # Execute the RET
-                addr, instr, mcycle = buffer[0]
-
+                addr, instr, mcycle = buffer[1]
 
                 for function in functions:
                     if addr >= function[1] and addr <= function[2]:
                         cs.ret(function[0], addr, mcycle)
                         break
-                        
 
-                buffer = buffer[1:]
+                buffer = buffer[2:]
 
-                assert (len(buffer) == 1)
+                # assert (len(buffer) == 1)
 
                 # Execute this last instruction
-                addr, instr, mcycle = buffer[-1]
-                buffer = []
-                state = None
+                if (len(buffer) > 0):
+                    addr, instr, mcycle = buffer[-1]
+                    buffer = []
+                    state = None
+                else:
+                    state = None
+                    return
 
         #Get the opcode from the instr
         opcode = instr & 0x7F
@@ -226,6 +278,7 @@ def riscv_profile_main(elf, fst, cfg, output, step):
             until the buffer is full.
             """
             state = "BR"
+            buffer.append((addr, instr, mcycle))
             print(f"[BR] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}")
             return
         elif (opcode in CALL):
