@@ -20,6 +20,13 @@ def run_perl_script(fg_data, svg):
     # Write the output to a file
     with open(svg, "w") as f:
         subprocess.run(command, check=True, stdout=f, text=True, stderr=subprocess.DEVNULL)
+    
+def file_exist(file):
+    if not os.path.exists(file):
+        print(f"File {file} not found.")
+        exit(1)
+    
+    return True
 
 def main():
     parser = argparse.ArgumentParser(description='Generate a flamegraph from a RISC-V binary and a FST file.')
@@ -37,6 +44,10 @@ def main():
     OUTPUT = parser.out
     STEP = 0 # Disabled for now
 
+    # Check if the files exist
+    file_exist(ELF)
+    file_exist(FST)
+    file_exist(CFG)
 
     config_file, _ = os.path.splitext(CFG)
     OUTPUT, _ = os.path.splitext(OUTPUT) # Get rid of the extension
