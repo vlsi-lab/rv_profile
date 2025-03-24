@@ -2,14 +2,19 @@ import argparse
 import os
 import subprocess
 import tempfile
-import importlib.resources as pkg_resources
+
+try:
+    from importlib.resources import files
+except ImportError:
+    from importlib_resources import files
+
 from rv_profile.rv_profile import riscv_profile_main
 from rv_profile.colors import fix_color
 from yaspin import yaspin
 
 def run_perl_script(fg_data, svg):
     """Run a Perl script bundled with the package."""
-    scripts_path = pkg_resources.files("rv_profile") / "FlameGraph"
+    scripts_path = files("rv_profile") / "FlameGraph"
     script_path = scripts_path / "flamegraph.pl"
 
     if not script_path.exists():
