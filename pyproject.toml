@@ -13,7 +13,7 @@ authors = [{ name = "Vincenzo Petrolo", email = "vincenzo.petrolo99@gmail.com" }
 license = { text = "MIT" }
 dependencies = [
     "pylibfst==0.2.0",
-    "wal-lang==0.8.2"
+    "wal-lang@git+https://github.com/Vincenzo-Petrolo/wal.git@main"
 ]
 requires-python = ">=3.7"
 
