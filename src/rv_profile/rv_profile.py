@@ -1,5 +1,5 @@
 #!/bin/python
-from wal.core import Wal
+from wal.core import Wal, WalEvalError
 import os
 import subprocess
 from rv_profile.CallStack import CallStack
@@ -13,6 +13,8 @@ BR=(0b1100011,)
 BR_BUFF_LENGTH = 2
 CALL_BUFF_LENGTH = 1
 RET_BUFF_LENGTH = 1
+
+DEBUG = False
 
 
 def ranges(binary_file):
@@ -61,7 +63,12 @@ def riscv_profile_main(elf, fst, cfg, output, step):
     wal.load(VCD)
     
 
-    wal.eval_str(f'(eval-file {CFG_FILE})') # require config script to get concrete signal names
+    try:
+        wal.eval_str(f'(eval-file {CFG_FILE})') # require config script to get concrete signal names
+    except WalEvalError as e:
+        # Print in red the error message
+        print(f"\033[91m{e}\033[0m")
+        exit(1)
 
     def count_function(seval, args):
         nonlocal buffer
@@ -72,7 +79,7 @@ def riscv_profile_main(elf, fst, cfg, output, step):
         instr = seval.eval(args[1])
         mcycle = seval.eval(args[2])
 
-        print(f"[????] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}")
+        print(f"[????] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}") if DEBUG else None
 
         if (last is not None and last[1] == instr and last[0] == addr):
             return
@@ -83,7 +90,7 @@ def riscv_profile_main(elf, fst, cfg, output, step):
                 found = True
 
         if (not found): 
-            print("Ignoring instr")
+            print("Ignoring instr") if DEBUG else None
             return
 
         assert (len(buffer) <= max(BR_BUFF_LENGTH, CALL_BUFF_LENGTH, RET_BUFF_LENGTH)+1)
@@ -102,11 +109,11 @@ def riscv_profile_main(elf, fst, cfg, output, step):
             instructions.
             """
             if (len(buffer) < BR_BUFF_LENGTH+1):
-                print("[BR] Appending to buffer")
+                print("[BR] Appending to buffer") if DEBUG else None
                 buffer.append((addr, instr, mcycle))
 
             if (len(buffer) == BR_BUFF_LENGTH+1):
-                print("[BR] Buffer full")
+                print("[BR] Buffer full") if DEBUG else None
                 """
                 Check if addresses in the buffer are contiguous, if they are
                 then the branch was not taken and we can pop the buffer and add
@@ -135,7 +142,7 @@ def riscv_profile_main(elf, fst, cfg, output, step):
                                 break
                         
                         if (another_func):
-                            print("[BR] Another function called")
+                            print("[BR] Another function called") if DEBUG else None
                             break
 
                         taken = True
@@ -144,19 +151,19 @@ def riscv_profile_main(elf, fst, cfg, output, step):
 
                 
                 if (taken):
-                    print(f"[BR] Branch taken: {taken}")
+                    print(f"[BR] Branch taken: {taken}") if DEBUG else None
                 
                 if (another_func):
-                    print("[BR] Branch is not a real branch, entered another function")
+                    print("[BR] Branch is not a real branch, entered another function") if DEBUG else None
 
                     # Iterate the buffer until we meet a CALL/RET instruction
                     for i in range(len(buffer)):
                         addr, instr, mcycle = buffer[i]
                         opcode = instr & 0x7F
 
-                        print(f"[BR] Checking for corner case: {hex(addr)}, {hex(instr)}")
+                        print(f"[BR] Checking for corner case: {hex(addr)}, {hex(instr)}") if DEBUG else None
                         if (instr in set(RET + MRET) or opcode in set(CALL)):
-                            print("[BR] Stopping at corner case")
+                            print("[BR] Stopping at corner case") if DEBUG else None
                             buffer = buffer[i:]
                             break
                     
@@ -178,11 +185,11 @@ def riscv_profile_main(elf, fst, cfg, output, step):
 
                             # Check if it is a corner-case, stop looping
                             if (instr in set(BR+ CALL+ RET+ MRET)):
-                                print("[BR] Stopping at corner case")
+                                print("[BR] Stopping at corner case") if DEBUG else None
                                 buffer = buffer[i:]
                                 break
                             else: # Add to call stack
-                                print(f"[BR] Adding to call stack: {hex(addr)}")
+                                print(f"[BR] Adding to call stack: {hex(addr)}") if DEBUG else None
                                 for function in functions:
                                     if addr >= function[1] and addr <= function[2]:
                                         cs.call(function[0], addr, mcycle)
@@ -195,7 +202,7 @@ def riscv_profile_main(elf, fst, cfg, output, step):
                         # The last one overrides addr, instr, mcycle
                         addr, instr, mcycle = buffer[-1]
                         buffer = [] # Empty the buffer
-                        print(f"[BR] Ignoring instructions in buffer, except last: {hex(addr)}")
+                        print(f"[BR] Ignoring instructions in buffer, except last: {hex(addr)}") if DEBUG else None
                     
                     state = None
         if (state == "CALL"):
@@ -210,13 +217,13 @@ def riscv_profile_main(elf, fst, cfg, output, step):
             """
             if (len(buffer) < CALL_BUFF_LENGTH+1):
                 buffer.append((addr, instr, mcycle))
-                print("[CALL] Appending to buffer, length: ", len(buffer))
+                print("[CALL] Appending to buffer, length: ", len(buffer)) if DEBUG else None
             
             if (len(buffer) == CALL_BUFF_LENGTH+1):
-                print("[CALL] Buffer full")
+                print("[CALL] Buffer full") if DEBUG else None
                 # Execute a first call to the oldest instruction in the buffer
                 addr, instr, mcycle = buffer[0]
-                print(f"[CALL] Adding to call stack: {hex(addr)}")
+                print(f"[CALL] Adding to call stack: {hex(addr)}") if DEBUG else None
                 for function in functions:
                     if addr >= function[1] and addr <= function[2]:
                         cs.call(function[0], addr, mcycle)
@@ -232,11 +239,11 @@ def riscv_profile_main(elf, fst, cfg, output, step):
         if (state == "RET"):
             """Use the same algorithm as for CALL instructions."""
             if (len(buffer) < RET_BUFF_LENGTH+1):
-                print("[RET] Appending to buffer")
+                print("[RET] Appending to buffer") if DEBUG else None
                 buffer.append((addr, instr, mcycle))
             
             if (len(buffer) == RET_BUFF_LENGTH+1):
-                print("[RET] Buffer full")
+                print("[RET] Buffer full") if DEBUG else None
 
                 # Execute the RET
                 addr, instr, mcycle = buffer[1]
@@ -271,7 +278,7 @@ def riscv_profile_main(elf, fst, cfg, output, step):
             """
             state = "RET"
             buffer.append((addr, instr, mcycle))
-            print(f"[RET] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}")
+            print(f"[RET] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}") if DEBUG else None
             return
         elif (opcode in BR):
             """A branch instruction is detected, keep accepting new instructions
@@ -279,14 +286,14 @@ def riscv_profile_main(elf, fst, cfg, output, step):
             """
             state = "BR"
             buffer.append((addr, instr, mcycle))
-            print(f"[BR] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}")
+            print(f"[BR] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}") if DEBUG else None
             return
         elif (opcode in CALL):
             """A call instruction is detected, keep accepting new instructions"
             """
             state = "CALL"
             buffer.append((addr, instr, mcycle))
-            print(f"[CALL] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}")
+            print(f"[CALL] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}, state: {state}") if DEBUG else None
             return
         else:
             state = None
@@ -307,7 +314,7 @@ def riscv_profile_main(elf, fst, cfg, output, step):
 
             for function in functions:
                 if addr >= function[1] and addr <= function[2]:
-                        print(f"[NONE] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}")
+                        print(f"[NONE] addr: {hex(addr)} instr: {hex(instr)}, mcycle: {mcycle}") if DEBUG else None
                         cs.call(function[0], addr, mcycle)
                         return
 
@@ -315,6 +322,11 @@ def riscv_profile_main(elf, fst, cfg, output, step):
 
     wal.register_operator("count-function", count_function)
 
-    instructions_executed = wal.eval_str('(whenever (fire) (count-function pc instr mcycle))', funcs=functions)
+    try:
+        instructions_executed = wal.eval_str('(whenever (fire) (count-function pc instr mcycle))', funcs=functions)
+    except WalEvalError as e:
+        # Print in red the error message
+        print(f"\033[91m{e}\033[0m")
+        exit(1)
 
     cs.generate_flamegraph_data(FG_DATA)
