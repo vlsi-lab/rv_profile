@@ -28,7 +28,9 @@ class CallStack:
                 call_stack = [f[0] for f in self.stack]
 
                 duration = end_time - start_time
-                assert duration >= 0
+
+                if (duration < 0):
+                    raise Exception(f"Negative duration: {duration} for function {fn}")
 
                 call_stack += [fn]
                 self.call_stack_history.append((";".join(call_stack), duration))
@@ -46,7 +48,9 @@ class CallStack:
                     call_stack += [fn]
 
                     duration = end_time - start_time
-                    assert duration >= 0
+
+                    if (duration < 0):
+                        raise Exception(f"Negative duration: {duration} for function {fn}")
 
                     self.call_stack_history.append((";".join(call_stack), duration))
 
