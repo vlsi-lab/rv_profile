@@ -13,7 +13,7 @@ authors = [{ name = "Vincenzo Petrolo", email = "vincenzo.petrolo99@gmail.com" }
 license = { text = "MIT" }
 dependencies = [
     "pylibfst==0.2.0",
-    "wal-lang@git+https://github.com/Vincenzo-Petrolo/wal.git@main",
+    "wal-lang@git+https://github.com/Vincenzo-Petrolo/wal.git@c9f9be9ae9154e5388b2e8caae1c1c91232b353d",
     "importlib-resources",
     "yaspin"
 ]
