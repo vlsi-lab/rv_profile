@@ -1,0 +1,576 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1200" height="246" onload="init(evt)" viewBox="0 0 1200 246">
+
+
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0">
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames &gt; *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x &amp;&amp; params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom(true);
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				// we have basically done a clearzoom so clear the url
+				var params = get_params();
+				if (params.x) delete params.x;
+				if (params.y) delete params.y;
+				history.replaceState(null, null, parse_params(params));
+				unzoombtn.classList.add("hide");
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el &amp;&amp; el.attributes &amp;&amp; el.attributes.y &amp;&amp; el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey &amp;&amp; e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey &amp;&amp; e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&amp;');
+		for (var i = 0; i &lt; paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&amp;';
+		}
+		if (uri.slice(-1) == "&amp;")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w &lt; 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		var sl = t.getSubStringLength(0, txt.length);
+		// check if only whitespace or if we can fit the entire string into width w
+		if (/^ *$/.test(txt) || sl &lt; w)
+			return;
+
+		// this isn't perfect, but gives a good starting point
+		// and avoids calling getSubStringLength too often
+		var start = Math.floor((w/sl) * txt.length);
+		for (var x = start; x &gt; 0; x = x-2) {
+			if (t.getSubStringLength(0, x + 2) &lt;= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i &lt; c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i &lt; c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i &lt; c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i &lt; el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) &gt; ymin;
+			} else {
+				upstack = parseFloat(a.y.value) &lt; ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex &lt;= xmin &amp;&amp; (ex+ew+fudge) &gt;= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex &lt; xmin || ex + fudge &gt;= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom(dont_update_text) {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i &lt; el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			if(!dont_update_text) update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i &lt; el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+		if (currentSearchTerm === null) return;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i &lt; el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w &gt; maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w &gt; matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x &gt;= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+
+</script>
+<rect x="0.0" y="0" width="1200.0" height="246.0" fill="none" />
+<text id="title" x="600.00" y="24">Flame Chart</text>
+<text id="details" x="10.00" y="229"> </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1090.00" y="24">Search</text>
+<text id="ignorecase" x="1174.00" y="24">ic</text>
+<text id="matched" x="1090.00" y="229"> </text>
+<g id="frames">
+<g>
+<title>_write_r (50,854 samples, 96.50%)</title><rect x="40.3" y="53" width="1138.7" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="43.34" y="63.5" style="fill:white">_write_r</text>
+</g>
+<g>
+<title>__sflush_r (50,957 samples, 96.69%)</title><rect x="38.0" y="85" width="1141.0" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="41.03" y="95.5" style="fill:white">__sflush_r</text>
+</g>
+<g>
+<title>stdio_exit_handler (98 samples, 0.19%)</title><rect x="1179.0" y="149" width="2.2" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="1182.01" y="159.5" style="fill:black" />
+</g>
+<g>
+<title>global_stdio_init.part.0 (339 samples, 0.64%)</title><rect x="18.6" y="101" width="7.6" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="21.62" y="111.5" style="fill:white" />
+</g>
+<g>
+<title>_fstat (5 samples, 0.01%)</title><rect x="30.7" y="53" width="0.1" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="33.71" y="63.5" style="fill:white" />
+</g>
+<g>
+<title>__call_exitprocs (108 samples, 0.20%)</title><rect x="1181.2" y="149" width="2.4" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="1184.20" y="159.5" style="fill:white" />
+</g>
+<g>
+<title>__swrite (50,894 samples, 96.57%)</title><rect x="39.4" y="69" width="1139.6" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="42.44" y="79.5" style="fill:white">__swrite</text>
+</g>
+<g>
+<title>_fflush_r (50,984 samples, 96.74%)</title><rect x="37.4" y="101" width="1141.6" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="40.43" y="111.5" style="fill:white">_fflush_r</text>
+</g>
+<g>
+<title>_sbrk_r (74 samples, 0.14%)</title><rect x="32.9" y="53" width="1.6" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="35.88" y="63.5" style="fill:white" />
+</g>
+<g>
+<title>std (315 samples, 0.60%)</title><rect x="19.2" y="85" width="7.0" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="22.16" y="95.5" style="fill:white" />
+</g>
+<g>
+<title>_write (50,849 samples, 96.49%)</title><rect x="40.5" y="37" width="1138.5" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="43.45" y="47.5" style="fill:white">_write</text>
+</g>
+<g>
+<title>_isatty_r (28 samples, 0.05%)</title><rect x="35.0" y="85" width="0.6" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="37.97" y="95.5" style="fill:white" />
+</g>
+<g>
+<title>_puts_r (52,193 samples, 99.04%)</title><rect x="10.4" y="133" width="1168.6" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="13.36" y="143.5" style="fill:white">_puts_r</text>
+</g>
+<g>
+<title>__sflush_r (49 samples, 0.09%)</title><rect x="1188.9" y="101" width="1.1" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="1191.90" y="111.5" style="fill:white" />
+</g>
+<g>
+<title>__libc_fini_array (20 samples, 0.04%)</title><rect x="1183.2" y="133" width="0.4" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="1186.17" y="143.5" style="fill:white" />
+</g>
+<g>
+<title>_malloc_r (185 samples, 0.35%)</title><rect x="30.8" y="85" width="4.2" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="33.82" y="95.5" style="fill:black" />
+</g>
+<g>
+<title>_fstat_r (30 samples, 0.06%)</title><rect x="30.2" y="69" width="0.6" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="33.15" y="79.5" style="fill:white" />
+</g>
+<g>
+<title>_sbrk (12 samples, 0.02%)</title><rect x="33.4" y="37" width="0.3" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="36.44" y="47.5" style="fill:white" />
+</g>
+<g>
+<title>stdio_exit_handler (285 samples, 0.54%)</title><rect x="1183.6" y="149" width="6.4" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="1186.62" y="159.5" style="fill:black" />
+</g>
+<g>
+<title>__swhatbuf_r (72 samples, 0.14%)</title><rect x="29.2" y="85" width="1.6" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="32.21" y="95.5" style="fill:white" />
+</g>
+<g>
+<title>__swbuf_r (51,066 samples, 96.90%)</title><rect x="35.6" y="117" width="1143.4" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="38.59" y="127.5" style="fill:black">__swbuf_r</text>
+</g>
+<g>
+<title>_sbrk (12 samples, 0.02%)</title><rect x="34.3" y="37" width="0.2" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="37.27" y="47.5" style="fill:white" />
+</g>
+<g>
+<title>memset (58 samples, 0.11%)</title><rect x="20.2" y="69" width="1.3" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="23.21" y="79.5" style="fill:black" />
+</g>
+<g>
+<title>main (52,209 samples, 99.07%)</title><rect x="10.0" y="165" width="1169.0" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="13.00" y="175.5" style="fill:black">main</text>
+</g>
+<g>
+<title>memset (58 samples, 0.11%)</title><rect x="24.9" y="69" width="1.3" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="27.91" y="79.5" style="fill:black" />
+</g>
+<g>
+<title>__smakebuf_r (356 samples, 0.68%)</title><rect x="27.6" y="101" width="8.0" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="30.62" y="111.5" style="fill:black" />
+</g>
+<g>
+<title>_start (52,700 samples, 100.00%)</title><rect x="10.0" y="181" width="1180.0" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="13.00" y="191.5" style="fill:white">_start</text>
+</g>
+<g>
+<title>all (52,700 samples, 100%)</title><rect x="10.0" y="197" width="1180.0" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="13.00" y="207.5" style="fill:white" />
+</g>
+<g>
+<title>__sinit (352 samples, 0.67%)</title><rect x="18.3" y="117" width="7.9" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="21.33" y="127.5" style="fill:white" />
+</g>
+<g>
+<title>_fflush_r (85 samples, 0.16%)</title><rect x="1188.1" y="117" width="1.9" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="1191.10" y="127.5" style="fill:white" />
+</g>
+<g>
+<title>sbrk_aligned (115 samples, 0.22%)</title><rect x="32.0" y="69" width="2.5" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="34.97" y="79.5" style="fill:white" />
+</g>
+<g>
+<title>exit (491 samples, 0.93%)</title><rect x="1179.0" y="165" width="11.0" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="1182.01" y="175.5" style="fill:white" />
+</g>
+<g>
+<title>memset (58 samples, 0.11%)</title><rect x="22.6" y="69" width="1.3" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="25.56" y="79.5" style="fill:black" />
+</g>
+<g>
+<title>_fwalk_sglue (285 samples, 0.54%)</title><rect x="1183.6" y="133" width="6.4" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="1186.62" y="143.5" style="fill:white" />
+</g>
+<g>
+<title>__swsetup_r (419 samples, 0.80%)</title><rect x="26.2" y="117" width="9.4" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="29.21" y="127.5" style="fill:white" />
+</g>
+<g>
+<title>puts (52,197 samples, 99.05%)</title><rect x="10.3" y="149" width="1168.7" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="13.27" y="159.5" style="fill:white">puts</text>
+</g>
+</g>
+</svg>
