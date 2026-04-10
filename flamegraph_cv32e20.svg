@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1200" height="246" onload="init(evt)" viewBox="0 0 1200 246">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1200" height="230" onload="init(evt)" viewBox="0 0 1200 230">
 
 
 <defs>
@@ -420,201 +420,177 @@
 	}
 
 </script>
-<rect x="0.0" y="0" width="1200.0" height="246.0" fill="none" />
+<rect x="0.0" y="0" width="1200.0" height="230.0" fill="none" />
 <text id="title" x="600.00" y="24">Flame Chart</text>
-<text id="details" x="10.00" y="229"> </text>
+<text id="details" x="10.00" y="213"> </text>
 <text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
 <text id="search" x="1090.00" y="24">Search</text>
 <text id="ignorecase" x="1174.00" y="24">ic</text>
-<text id="matched" x="1090.00" y="229"> </text>
+<text id="matched" x="1090.00" y="213"> </text>
 <g id="frames">
 <g>
-<title>__call_exitprocs (134 samples, 0.23%)</title><rect x="1179.5" y="149" width="2.7" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="1182.50" y="159.5" style="fill:white" />
+<title>__libc_init_array (40 samples, 0.03%)</title><rect x="24.1" y="149" width="0.4" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="27.06" y="159.5" style="fill:white" />
 </g>
 <g>
-<title>all (58,765 samples, 100%)</title><rect x="10.0" y="197" width="1180.0" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="13.00" y="207.5" style="fill:black" />
+<title>__call_exitprocs (134 samples, 0.11%)</title><rect x="1185.8" y="149" width="1.4" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="1188.83" y="159.5" style="fill:white" />
 </g>
 <g>
-<title>__sfp (4,119 samples, 7.01%)</title><rect x="50.1" y="101" width="82.7" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="53.06" y="111.5" style="fill:white">__sfp</text>
+<title>__sfmoreglue (3,571 samples, 3.06%)</title><rect x="31.3" y="85" width="36.1" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="34.31" y="95.5" style="fill:white">__s..</text>
 </g>
 <g>
-<title>_malloc_r (145 samples, 0.25%)</title><rect x="145.9" y="85" width="3.0" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="148.94" y="95.5" style="fill:white" />
+<title>__swsetup_r (453 samples, 0.39%)</title><rect x="75.7" y="117" width="4.6" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="78.70" y="127.5" style="fill:white" />
 </g>
 <g>
-<title>__sfmoreglue (3,571 samples, 6.08%)</title><rect x="52.3" y="85" width="71.7" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="55.31" y="95.5" style="fill:white">__sfmore..</text>
+<title>__sflush_r (50,994 samples, 43.72%)</title><rect x="81.9" y="101" width="515.8" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="84.86" y="111.5" style="fill:white">__sflush_r</text>
 </g>
 <g>
-<title>__sflush_r (60 samples, 0.10%)</title><rect x="1188.8" y="101" width="1.2" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="1191.80" y="111.5" style="fill:white" />
+<title>_sbrk (19 samples, 0.02%)</title><rect x="79.7" y="53" width="0.2" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="82.73" y="63.5" style="fill:white" />
 </g>
 <g>
-<title>_sbrk (19 samples, 0.03%)</title><rect x="56.3" y="37" width="0.4" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="59.34" y="47.5" style="fill:black" />
+<title>memset (1,347 samples, 1.15%)</title><rect x="10.0" y="149" width="13.6" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="13.00" y="159.5" style="fill:black" />
 </g>
 <g>
-<title>main (56,668 samples, 96.43%)</title><rect x="38.7" y="165" width="1137.9" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="41.71" y="175.5" style="fill:black">main</text>
+<title>memset (66 samples, 0.06%)</title><rect x="72.5" y="85" width="0.6" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="75.47" y="95.5" style="fill:black" />
 </g>
 <g>
-<title>__sinit (4,581 samples, 7.80%)</title><rect x="48.4" y="117" width="92.0" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="51.43" y="127.5" style="fill:black">__sinit</text>
+<title>__sinit (4,581 samples, 3.93%)</title><rect x="29.4" y="117" width="46.3" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="32.36" y="127.5" style="fill:white">__si..</text>
 </g>
 <g>
-<title>_write (50,860 samples, 86.55%)</title><rect x="155.3" y="37" width="1021.3" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="158.34" y="47.5" style="fill:white">_write</text>
+<title>exit (412 samples, 0.35%)</title><rect x="1185.8" y="165" width="4.2" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="1188.83" y="175.5" style="fill:black" />
 </g>
 <g>
-<title>std (381 samples, 0.65%)</title><rect x="132.8" y="101" width="7.6" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="135.77" y="111.5" style="fill:black" />
+<title>_sbrk (19 samples, 0.02%)</title><rect x="33.5" y="37" width="0.2" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="36.53" y="47.5" style="fill:white" />
 </g>
 <g>
-<title>__sflush_r (50,994 samples, 86.78%)</title><rect x="152.6" y="85" width="1024.0" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="155.65" y="95.5" style="fill:white">__sflush_r</text>
+<title>_malloc_r (195 samples, 0.17%)</title><rect x="31.8" y="69" width="2.0" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="34.78" y="79.5" style="fill:white" />
 </g>
 <g>
-<title>memset (1,347 samples, 2.29%)</title><rect x="10.0" y="165" width="27.0" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="13.00" y="175.5" style="fill:white">m..</text>
+<title>__libc_fini_array (26 samples, 0.02%)</title><rect x="1186.9" y="133" width="0.3" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="1189.92" y="143.5" style="fill:white" />
 </g>
 <g>
-<title>_fflush_r (115 samples, 0.20%)</title><rect x="1187.7" y="117" width="2.3" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="1190.69" y="127.5" style="fill:white" />
+<title>__register_exitproc (37 samples, 0.03%)</title><rect x="23.7" y="149" width="0.4" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="26.69" y="159.5" style="fill:black" />
 </g>
 <g>
-<title>exit (667 samples, 1.14%)</title><rect x="1176.6" y="165" width="13.4" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="1179.61" y="175.5" style="fill:white" />
+<title>_sbrk_r (49 samples, 0.04%)</title><rect x="79.4" y="69" width="0.5" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="82.43" y="79.5" style="fill:white" />
 </g>
 <g>
-<title>__register_exitproc (37 samples, 0.06%)</title><rect x="37.2" y="149" width="0.7" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="40.17" y="159.5" style="fill:white" />
+<title>_fstat_r (39 samples, 0.03%)</title><rect x="78.1" y="69" width="0.4" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="81.09" y="79.5" style="fill:white" />
 </g>
 <g>
-<title>memset (66 samples, 0.11%)</title><rect x="131.4" y="85" width="1.4" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="134.44" y="95.5" style="fill:white" />
+<title>__swbuf_r (51,150 samples, 43.85%)</title><rect x="80.3" y="117" width="517.4" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="83.29" y="127.5" style="fill:black">__swbuf_r</text>
 </g>
 <g>
-<title>__swrite (50,916 samples, 86.64%)</title><rect x="154.2" y="69" width="1022.4" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="157.21" y="79.5" style="fill:white">__swrite</text>
+<title>_isatty_r (33 samples, 0.03%)</title><rect x="80.0" y="85" width="0.3" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="82.95" y="95.5" style="fill:white" />
 </g>
 <g>
-<title>_cleanup_r (389 samples, 0.66%)</title><rect x="1182.2" y="149" width="7.8" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="1185.19" y="159.5" style="fill:white" />
+<title>__smakebuf_r (358 samples, 0.31%)</title><rect x="76.7" y="101" width="3.6" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="79.66" y="111.5" style="fill:black" />
 </g>
 <g>
-<title>_fflush_r (51,040 samples, 86.85%)</title><rect x="151.7" y="101" width="1024.9" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="154.72" y="111.5" style="fill:white">_fflush_r</text>
+<title>_fflush_r (55 samples, 0.05%)</title><rect x="1188.7" y="133" width="0.6" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="1191.75" y="143.5" style="fill:white" />
 </g>
 <g>
-<title>_write_r (50,865 samples, 86.56%)</title><rect x="155.2" y="53" width="1021.4" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="158.24" y="63.5" style="fill:white">_write_r</text>
+<title>all (116,647 samples, 100%)</title><rect x="10.0" y="181" width="1180.0" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="13.00" y="191.5" style="fill:white" />
 </g>
 <g>
-<title>__libc_fini_array (25 samples, 0.04%)</title><rect x="1181.7" y="133" width="0.5" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="1184.69" y="143.5" style="fill:white" />
+<title>memset (66 samples, 0.06%)</title><rect x="67.4" y="85" width="0.7" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="70.44" y="95.5" style="fill:black" />
 </g>
 <g>
-<title>_sbrk (19 samples, 0.03%)</title><rect x="55.4" y="37" width="0.3" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="58.36" y="47.5" style="fill:black" />
+<title>_start (116,235 samples, 99.65%)</title><rect x="10.0" y="165" width="1175.8" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="13.00" y="175.5" style="fill:white">_start</text>
 </g>
 <g>
-<title>__swbuf_r (51,150 samples, 87.04%)</title><rect x="149.5" y="117" width="1027.1" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="152.52" y="127.5" style="fill:white">__swbuf_r</text>
+<title>__sflush_r (60 samples, 0.05%)</title><rect x="1189.3" y="133" width="0.6" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="1192.30" y="143.5" style="fill:white" />
 </g>
 <g>
-<title>_start (58,765 samples, 100.00%)</title><rect x="10.0" y="181" width="1180.0" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="13.00" y="191.5" style="fill:white">_start</text>
+<title>_write (50,860 samples, 43.60%)</title><rect x="83.2" y="85" width="514.5" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="86.22" y="95.5" style="fill:white">_write</text>
 </g>
 <g>
-<title>_fwalk_reent (389 samples, 0.66%)</title><rect x="1182.2" y="133" width="7.8" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="1185.19" y="143.5" style="fill:black" />
+<title>_fflush_r (46 samples, 0.04%)</title><rect x="81.4" y="101" width="0.5" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="84.40" y="111.5" style="fill:white" />
 </g>
 <g>
-<title>memset (66 samples, 0.11%)</title><rect x="136.5" y="85" width="1.4" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="139.54" y="95.5" style="fill:white" />
+<title>_sbrk (19 samples, 0.02%)</title><rect x="33.0" y="37" width="0.2" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="36.03" y="47.5" style="fill:white" />
 </g>
 <g>
-<title>memset (66 samples, 0.11%)</title><rect x="139.1" y="85" width="1.3" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="142.09" y="95.5" style="fill:white" />
+<title>_fwalk_reent (274 samples, 0.23%)</title><rect x="1187.2" y="149" width="2.8" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="1190.23" y="159.5" style="fill:white" />
 </g>
 <g>
-<title>_sbrk_r (98 samples, 0.17%)</title><rect x="54.8" y="53" width="1.9" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="57.76" y="63.5" style="fill:black" />
+<title>memset (66 samples, 0.06%)</title><rect x="73.8" y="85" width="0.6" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="76.75" y="95.5" style="fill:black" />
 </g>
 <g>
-<title>_fstat_r (39 samples, 0.07%)</title><rect x="145.2" y="69" width="0.7" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="148.16" y="79.5" style="fill:white" />
+<title>__swrite (51 samples, 0.04%)</title><rect x="82.7" y="85" width="0.5" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="85.65" y="95.5" style="fill:white" />
 </g>
 <g>
-<title>_fstat (7 samples, 0.01%)</title><rect x="145.8" y="53" width="0.1" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="148.80" y="63.5" style="fill:white" />
+<title>main (56,668 samples, 48.58%)</title><rect x="24.5" y="149" width="573.2" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="27.47" y="159.5" style="fill:white">main</text>
 </g>
 <g>
-<title>_cleanup_r (144 samples, 0.25%)</title><rect x="1176.6" y="149" width="2.9" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="1179.61" y="159.5" style="fill:white" />
+<title>memset (66 samples, 0.06%)</title><rect x="71.2" y="85" width="0.6" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="74.18" y="95.5" style="fill:black" />
 </g>
 <g>
-<title>memset (3,330 samples, 5.67%)</title><rect x="57.1" y="69" width="66.9" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="60.15" y="79.5" style="fill:white">memset</text>
+<title>__swhatbuf_r (91 samples, 0.08%)</title><rect x="77.6" y="85" width="0.9" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="80.56" y="95.5" style="fill:white" />
 </g>
 <g>
-<title>memset (66 samples, 0.11%)</title><rect x="124.0" y="85" width="1.3" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="127.01" y="95.5" style="fill:white" />
+<title>memset (66 samples, 0.06%)</title><rect x="69.2" y="85" width="0.7" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="72.24" y="95.5" style="fill:black" />
 </g>
 <g>
-<title>__smakebuf_r (358 samples, 0.61%)</title><rect x="142.3" y="101" width="7.2" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="145.33" y="111.5" style="fill:white" />
+<title>_puts_r (56,647 samples, 48.56%)</title><rect x="24.7" y="133" width="573.0" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
+<text x="27.68" y="143.5" style="fill:white">_puts_r</text>
 </g>
 <g>
-<title>atexit (43 samples, 0.07%)</title><rect x="37.0" y="165" width="0.9" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="40.05" y="175.5" style="fill:white" />
+<title>memset (66 samples, 0.06%)</title><rect x="75.0" y="85" width="0.7" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="78.04" y="95.5" style="fill:black" />
 </g>
 <g>
-<title>__swhatbuf_r (91 samples, 0.15%)</title><rect x="144.1" y="85" width="1.8" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="147.11" y="95.5" style="fill:white" />
+<title>std (381 samples, 0.33%)</title><rect x="71.8" y="101" width="3.9" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="74.85" y="111.5" style="fill:black" />
 </g>
 <g>
-<title>memset (66 samples, 0.11%)</title><rect x="127.6" y="85" width="1.3" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="130.59" y="95.5" style="fill:white" />
+<title>__sfp (4,119 samples, 3.53%)</title><rect x="30.2" y="101" width="41.6" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="33.18" y="111.5" style="fill:white">__sfp</text>
 </g>
 <g>
-<title>memset (66 samples, 0.11%)</title><rect x="134.0" y="85" width="1.3" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="136.99" y="95.5" style="fill:white" />
+<title>_sbrk_r (98 samples, 0.08%)</title><rect x="32.7" y="53" width="1.0" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
+<text x="35.73" y="63.5" style="fill:white" />
 </g>
 <g>
-<title>__libc_init_array (40 samples, 0.07%)</title><rect x="37.9" y="165" width="0.8" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="40.91" y="175.5" style="fill:black" />
+<title>_malloc_r (145 samples, 0.12%)</title><rect x="78.5" y="85" width="1.5" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
+<text x="81.49" y="95.5" style="fill:white" />
 </g>
 <g>
-<title>_puts_r (56,647 samples, 96.40%)</title><rect x="39.1" y="133" width="1137.5" height="15.0" fill="rgb(0,116,128)" rx="2" ry="2" />
-<text x="42.14" y="143.5" style="fill:white">_puts_r</text>
-</g>
-<g>
-<title>_malloc_r (195 samples, 0.33%)</title><rect x="53.2" y="69" width="3.9" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="56.23" y="79.5" style="fill:white" />
-</g>
-<g>
-<title>puts (56,654 samples, 96.41%)</title><rect x="39.0" y="149" width="1137.6" height="15.0" fill="rgb(109,26,54)" rx="2" ry="2" />
-<text x="42.00" y="159.5" style="fill:white">puts</text>
-</g>
-<g>
-<title>__swsetup_r (453 samples, 0.77%)</title><rect x="140.4" y="117" width="9.1" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="143.42" y="127.5" style="fill:white" />
-</g>
-<g>
-<title>_sbrk (19 samples, 0.03%)</title><rect x="148.0" y="53" width="0.4" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="150.97" y="63.5" style="fill:black" />
-</g>
-<g>
-<title>_sbrk_r (49 samples, 0.08%)</title><rect x="147.4" y="69" width="1.0" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
-<text x="150.37" y="79.5" style="fill:black" />
-</g>
-<g>
-<title>_isatty_r (33 samples, 0.06%)</title><rect x="148.9" y="85" width="0.6" height="15.0" fill="rgb(57,57,58)" rx="2" ry="2" />
-<text x="151.85" y="95.5" style="fill:white" />
+<title>memset (3,330 samples, 2.85%)</title><rect x="33.8" y="69" width="33.6" height="15.0" fill="rgb(213,137,54)" rx="2" ry="2" />
+<text x="36.75" y="79.5" style="fill:black">me..</text>
 </g>
 </g>
 </svg>
